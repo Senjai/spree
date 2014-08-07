@@ -2,7 +2,7 @@ module Spree
   module Admin
     class OrdersController < Spree::Admin::BaseController
       before_filter :initialize_order_events
-      before_filter :load_order, :only => [:edit, :update, :cancel, :resume, :approve, :resend, :open_adjustments, :close_adjustments]
+      before_filter :load_order, :only => [:edit, :update, :cancel, :resume, :approve, :resend, :open_adjustments, :close_adjustments, :cart]
 
       respond_to :html
 
@@ -48,15 +48,25 @@ module Spree
       end
 
       def new
-        @order = Order.create
-        @order.created_by = try_spree_current_user
-        @order.save
-        redirect_to edit_admin_order_url(@order)
+        @order = Order.create(order_params)
+        redirect_to cart_admin_order_url(@order)
       end
 
       def edit
-        unless @order.complete?
+        can_not_transition_without_customer_info
+
+        unless @order.completed?
+>>>>>>> b252e9a... This resolves #5132. The admin manual order cart is much more like the frontend now in that you start off by adding items to the cart(line items). You then add an address, the shipments are calculated based on the frontend rules you have set up but you as an admin can ignore those rules and muck with the shipments on the Shipments tab. You can also skip adding items to the cart altogether by just entering an address and then adding shipments manually, the way the old backend admin did before this patch.
           @order.refresh_shipment_rates
+        end
+      end
+
+      def cart
+        unless @order.completed?
+          @order.refresh_shipment_rates
+        end
+        if @order.shipped_shipments.count > 0
+          redirect_to edit_admin_order_url(@order)
         end
       end
 
