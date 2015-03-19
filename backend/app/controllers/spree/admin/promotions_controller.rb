@@ -9,13 +9,15 @@ module Spree
       helper 'spree/promotion_rules'
 
       def create
-        @promotion_builder = Spree::PromotionBuilder.new(
-          permitted_promo_builder_params.merge(user: spree_current_user),
-          permitted_resource_params,
-        )
-        @promotion = @promotion_builder.promotion
+        @promotion = Spree::Promotion.new permitted_resource_params
 
-        if @promotion_builder.perform
+        if permitted_promo_builder_params.any?
+          code_builder = Spree::PromotionCode::Builder.new(permitted_promo_builder_params.merge(promotion: @promotion))
+          code_builder.build_codes
+          @promotion = code_builder.promotion
+        end
+
+        if @promotion.save
           flash[:success] = Spree.t(:successfully_created, resource: @promotion.class.model_name.human)
           redirect_to location_after_save
         else
