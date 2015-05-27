@@ -51,11 +51,6 @@ module Spree
 
           before { Config.track_inventory_levels = false }
 
-          it "doesn't bother stock items status in stock location" do
-            expect(subject.stock_location).not_to receive(:fill_status)
-            subject.default_package
-          end
-
           it "still creates package with proper quantity" do
             expect(subject.default_package.quantity).to eql 30
           end
